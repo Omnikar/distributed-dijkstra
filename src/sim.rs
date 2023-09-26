@@ -5,6 +5,7 @@ use rand::Rng;
 pub struct World {
     pub agents: Vec<Agent>,
     pub sites: Vec<Site>,
+    pub world_size: [f32; 2],
     msg_queue: std::collections::VecDeque<Message>,
 }
 
@@ -29,14 +30,15 @@ impl World {
                 dir: rng.gen_range(0.0..2.0 * std::f32::consts::PI),
                 state: empty_state.clone(),
                 speed: rng.gen_range(0.7..=1.3),
-                turn: 50.0f32.to_radians(),
-                comm: 0.4,
+                turn: 100.0f32.to_radians(),
+                comm: 0.8,
             }
         });
 
         Self {
             agents: agents.collect(),
             sites: Vec::new(),
+            world_size: [16.0, 10.0],
             msg_queue: Default::default(),
         }
     }
@@ -73,12 +75,21 @@ impl World {
                 continue;
             }
 
-            frame[idx..idx + 3].fill(0xff);
+            let color = match agent.state.target {
+                Some((0, _)) => [0xff, 0x00, 0x00],
+                Some((1, _)) => [0x00, 0x00, 0xff],
+                _ => [0xff; 3],
+            };
+
+            frame[idx..idx + 3].copy_from_slice(&color);
         }
     }
 
     pub fn update(&mut self, delta: f32) {
-        self.agents.iter_mut().for_each(|agent| agent.step(delta));
+        self.agents.iter_mut().for_each(|agent| {
+            agent.step(delta);
+            agent.contain(self.world_size);
+        });
         self.msg_queue
             .extend(self.sites.iter().map(Site::collision_msg));
         while let Some(msg) = self.msg_queue.pop_front() {

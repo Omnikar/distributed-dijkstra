@@ -12,13 +12,21 @@ const SCREEN_DIMS: (u32, u32) = (1440, 900);
 
 fn main() {
     let mut world = sim::World::new();
+
     world.sites.push(sim::Site {
         pos: [3.0, 3.0],
         kind: 0,
         size: 0.4,
     });
+    world.sites.push(sim::Site {
+        pos: [7.0, 2.0],
+        kind: 1,
+        size: 0.4,
+    });
+
     world.agents.iter_mut().for_each(|agent| {
         agent.state.sites.insert(0, (std::f32::INFINITY, true));
+        agent.state.sites.insert(1, (std::f32::INFINITY, false));
     });
 
     let event_loop = EventLoop::new();
@@ -30,6 +38,9 @@ fn main() {
             .build(&event_loop)
             .expect("WindowBuilder failed")
     };
+    if let Some("--hide-cursor") = std::env::args().nth(1).as_deref() {
+        window.set_cursor_visible(false);
+    }
 
     let mut pixels = {
         let window_size = window.inner_size();
