@@ -23,10 +23,40 @@ fn main() {
         kind: 1,
         size: 0.4,
     });
+    world.sites.push(sim::Site {
+        pos: [5.0, 5.0],
+        kind: 2,
+        size: 0.4,
+    });
+    world.sites.push(sim::Site {
+        pos: [5.0, 8.0],
+        kind: 3,
+        size: 0.4,
+    });
+    world.sites.push(sim::Site {
+        pos: [8.0, 7.0],
+        kind: 4,
+        size: 0.4,
+    });
+    world.sites.push(sim::Site {
+        pos: [8.5, 4.5],
+        kind: 5,
+        size: 0.4,
+    });
 
+    world.site_kinds = vec![
+        [0xff, 0x00, 0x00],
+        [0x00, 0xff, 0x00],
+        [0x00, 0x00, 0xff],
+        [0xff, 0xff, 0x00],
+        [0x00, 0xff, 0xff],
+        [0xff, 0x00, 0xff],
+    ];
+
+    let n_sites = world.sites.iter().map(|site| site.kind + 1).max().unwrap();
     world.agents.iter_mut().for_each(|agent| {
-        agent.state.sites.insert(0, (std::f32::INFINITY, true));
-        agent.state.sites.insert(1, (std::f32::INFINITY, false));
+        agent.state.sites = vec![(f32::INFINITY, false); n_sites];
+        agent.state.sites[0].1 = true;
     });
 
     let event_loop = EventLoop::new();

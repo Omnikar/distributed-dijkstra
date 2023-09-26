@@ -5,6 +5,7 @@ use rand::Rng;
 pub struct World {
     pub agents: Vec<Agent>,
     pub sites: Vec<Site>,
+    pub site_kinds: Vec<[u8; 3]>,
     pub world_size: [f32; 2],
     msg_queue: std::collections::VecDeque<Message>,
 }
@@ -29,7 +30,7 @@ impl World {
                 pos: [x_coord, y_coord],
                 dir: rng.gen_range(0.0..2.0 * std::f32::consts::PI),
                 state: empty_state.clone(),
-                speed: rng.gen_range(0.7..=1.3),
+                speed: rng.gen_range(0.3..=1.3),
                 turn: 100.0f32.to_radians(),
                 comm: 0.8,
             }
@@ -38,6 +39,7 @@ impl World {
         Self {
             agents: agents.collect(),
             sites: Vec::new(),
+            site_kinds: Vec::new(),
             world_size: [16.0, 10.0],
             msg_queue: Default::default(),
         }
@@ -62,12 +64,12 @@ impl World {
 
                 if sq_dist <= sq_size {
                     let idx = 4 * (coord[1] * px_width + coord[0]);
-                    frame[idx..idx + 3].copy_from_slice(&[0x00, 0xff, 0x00]);
+                    frame[idx..idx + 3].copy_from_slice(&self.site_kinds[site.kind].map(|v| v / 2));
                 }
             }
         }
 
-        for agent in &self.agents {
+        for (i, agent) in self.agents.iter().enumerate() {
             let px_coord = agent.pos.map(|coord| (coord * px_per_unit) as usize);
 
             let idx = 4 * (px_coord[1] * px_width + px_coord[0]);
@@ -75,11 +77,14 @@ impl World {
                 continue;
             }
 
-            let color = match agent.state.target {
-                Some((0, _)) => [0xff, 0x00, 0x00],
-                Some((1, _)) => [0x00, 0x00, 0xff],
-                _ => [0xff; 3],
-            };
+            let mut color = agent
+                .state
+                .target
+                .map(|site| self.site_kinds[site.0])
+                .unwrap_or([0xff; 3]);
+            if i < self.agents.len() - 30 {
+                // color = color.map(|v| v / 3 * 2);
+            }
 
             frame[idx..idx + 3].copy_from_slice(&color);
         }

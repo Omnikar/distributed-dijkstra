@@ -1,5 +1,4 @@
 use rand::Rng;
-use std::collections::HashMap;
 use std::f32::consts::PI;
 
 pub struct Agent {
@@ -16,8 +15,8 @@ pub struct Agent {
 
 #[derive(Clone)]
 pub struct State {
-    /// site kind -> (square distance, is targeting site)
-    pub sites: HashMap<usize, (f32, bool)>,
+    /// site kind indexed, (square distance, is targeting site)
+    pub sites: Vec<(f32, bool)>,
     /// currently targeted site (kind, distance)
     pub target: Option<(usize, f32)>,
 }
@@ -38,7 +37,7 @@ impl Agent {
         self.state
             .sites
             .iter_mut()
-            .for_each(|(_, (sq_dist, _))| *sq_dist = (sq_dist.sqrt() + self.speed * delta).powi(2));
+            .for_each(|(sq_dist, _)| *sq_dist = (sq_dist.sqrt() + self.speed * delta).powi(2));
 
         self.dir += rand::thread_rng().gen_range(-delta * self.turn..delta * self.turn);
         self.dir = self.dir.rem_euclid(2.0 * PI);
@@ -48,25 +47,34 @@ impl Agent {
         let state = self
             .state
             .sites
-            .get_mut(&msg.site_kind)
+            .get_mut(msg.site_kind)
             .filter(|st| msg.sq_dist < st.0)?;
 
         state.0 = msg.sq_dist;
 
         if state.1 {
-            self.state.target = Some((msg.site_kind, state.0));
-
-            let diff = [0, 1].map(|i| msg.source[i] - self.pos[i]);
-            self.dir = diff[1].atan2(diff[0]);
+            if self
+                .state
+                .target
+                .map(|site| msg.sq_dist <= site.1)
+                .unwrap_or(true)
+            {
+                self.state.target = Some((msg.site_kind, state.0));
+                let diff = [0, 1].map(|i| msg.source[i] - self.pos[i]);
+                self.dir = diff[1].atan2(diff[0]);
+            }
 
             if msg.sq_dist == 0.0 {
                 self.dir = rand::thread_rng().gen_range(0.0..2.0 * PI);
                 state.1 = false;
-                self.state
-                    .sites
-                    .get_mut(&((msg.site_kind + 1) % 2))
-                    .unwrap()
-                    .1 = true;
+
+                if msg.site_kind == 0 {
+                    self.state.sites[1..]
+                        .iter_mut()
+                        .for_each(|site| site.1 = true);
+                } else if self.state.sites.iter().all(|site| !site.1) {
+                    self.state.sites[0].1 = true;
+                }
 
                 self.state.target = None;
             }
