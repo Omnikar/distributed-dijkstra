@@ -81,11 +81,16 @@ impl Agent {
     }
 
     pub fn contain(&mut self, world_size: [f32; 2]) {
+        use std::f32::consts::FRAC_PI_2;
         [0, 1].map(|i| {
             // <0: outside negative
             //  0: inside
             // >0: outside positive
-            if (self.pos[i] / world_size[i]).floor() != 0.0 {
+            let pos_status = (self.pos[i] / world_size[i]).floor() as i32;
+            // <0: facing outside negative
+            // >0: facing outside positive
+            let dir_status = (self.dir - i as f32 * FRAC_PI_2 < FRAC_PI_2) as i32 * 2 - 1;
+            if pos_status * dir_status > 0 {
                 self.dir = (1 - i) as f32 * PI - self.dir;
             }
         });
