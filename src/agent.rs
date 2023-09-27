@@ -69,12 +69,8 @@ impl Agent {
                 self.dir = rand::thread_rng().gen_range(0.0..2.0 * PI);
                 state.1 = false;
 
-                if msg.site_kind == 0 {
-                    self.state.sites[1..]
-                        .iter_mut()
-                        .for_each(|site| site.1 = true);
-                } else if self.state.sites.iter().all(|site| !site.1) {
-                    self.state.sites[0].1 = true;
+                if self.state.sites.iter().all(|site| !site.1) {
+                    self.state.sites.iter_mut().for_each(|site| site.1 = true);
                 }
 
                 self.state.target = None;

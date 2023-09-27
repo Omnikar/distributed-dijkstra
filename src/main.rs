@@ -55,8 +55,7 @@ fn main() {
 
     let n_sites = world.sites.iter().map(|site| site.kind + 1).max().unwrap();
     world.agents.iter_mut().for_each(|agent| {
-        agent.state.sites = vec![(f32::INFINITY, false); n_sites];
-        agent.state.sites[0].1 = true;
+        agent.state.sites = vec![(f32::INFINITY, true); n_sites];
     });
 
     let event_loop = EventLoop::new();
