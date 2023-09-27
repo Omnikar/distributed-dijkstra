@@ -33,6 +33,7 @@ impl World {
                 speed: rng.gen_range(0.3..=1.3),
                 turn: 100.0f32.to_radians(),
                 comm: 0.8,
+                is_scout: rng.gen_bool(0.4),
             }
         });
 
@@ -69,7 +70,7 @@ impl World {
             }
         }
 
-        for (i, agent) in self.agents.iter().enumerate() {
+        for agent in &self.agents {
             let px_coord = agent.pos.map(|coord| (coord * px_per_unit) as usize);
 
             let idx = 4 * (px_coord[1] * px_width + px_coord[0]);
@@ -77,14 +78,15 @@ impl World {
                 continue;
             }
 
-            let mut color = agent
-                .state
-                .target
-                .map(|site| self.site_kinds[site.0])
-                .unwrap_or([0xff; 3]);
-            if i < self.agents.len() - 30 {
-                // color = color.map(|v| v / 3 * 2);
-            }
+            let color = if agent.is_scout {
+                [0x4e; 3]
+            } else {
+                agent
+                    .state
+                    .target
+                    .map(|site| self.site_kinds[site.0])
+                    .unwrap_or([0xff; 3])
+            };
 
             frame[idx..idx + 3].copy_from_slice(&color);
         }

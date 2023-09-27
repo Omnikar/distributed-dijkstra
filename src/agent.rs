@@ -11,6 +11,7 @@ pub struct Agent {
     pub turn: f32,
     /// communication distance
     pub comm: f32,
+    pub is_scout: bool,
 }
 
 #[derive(Clone)]
@@ -52,7 +53,7 @@ impl Agent {
 
         state.0 = msg.sq_dist;
 
-        if state.1 {
+        if state.1 && !self.is_scout {
             if self
                 .state
                 .target
