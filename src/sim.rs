@@ -110,7 +110,7 @@ impl World {
             let abs_diff = [0, 1].map(|i| (agent.pos[i] - msg.source[i]).abs());
             // Outside bounding box
             if abs_diff.into_iter().any(|v| v > msg.range)
-                // Outside circle
+                // Outside circle; only checked if inside bounding box
                 || abs_diff.into_iter().map(|v| v * v).sum::<f32>() > sq_range
             {
                 continue;
