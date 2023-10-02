@@ -101,3 +101,31 @@ impl Agent {
         });
     }
 }
+
+impl crate::sim::Renderable for Agent {
+    fn render(
+        &self,
+        world: &crate::sim::World,
+        frame: &mut [u8],
+        px_per_unit: f32,
+        px_width: usize,
+    ) {
+        let px_coord = self.pos.map(|coord| (coord * px_per_unit) as usize);
+
+        let idx = 4 * (px_coord[1] * px_width + px_coord[0]);
+        if idx >= frame.len() {
+            return;
+        }
+
+        let color = if self.is_scout {
+            [0x4e; 3]
+        } else {
+            self.state
+                .target
+                .map(|site| world.site_kinds[site.0])
+                .unwrap_or([0xff; 3])
+        };
+
+        frame[idx..idx + 3].copy_from_slice(&color);
+    }
+}

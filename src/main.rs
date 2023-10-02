@@ -1,6 +1,8 @@
 mod agent;
 mod sim;
 
+use sim::site::Site;
+
 use pixels::{PixelsBuilder, SurfaceTexture};
 use winit::{
     dpi::LogicalSize,
@@ -13,32 +15,32 @@ const SCREEN_DIMS: (u32, u32) = (1440, 900);
 fn main() {
     let mut world = sim::World::new();
 
-    world.sites.push(sim::Site {
+    world.sites.push(Site {
         pos: [3.0, 3.0],
         kind: 0,
         size: 0.2,
     });
-    world.sites.push(sim::Site {
+    world.sites.push(Site {
         pos: [7.0, 2.0],
         kind: 1,
         size: 0.2,
     });
-    world.sites.push(sim::Site {
+    world.sites.push(Site {
         pos: [5.0, 5.0],
         kind: 2,
         size: 0.2,
     });
-    world.sites.push(sim::Site {
+    world.sites.push(Site {
         pos: [5.0, 8.0],
         kind: 3,
         size: 0.2,
     });
-    world.sites.push(sim::Site {
+    world.sites.push(Site {
         pos: [8.0, 7.0],
         kind: 4,
         size: 0.2,
     });
-    world.sites.push(sim::Site {
+    world.sites.push(Site {
         pos: [8.5, 4.5],
         kind: 5,
         size: 0.2,
