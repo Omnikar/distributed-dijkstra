@@ -1,6 +1,7 @@
 pub mod site;
 
 use crate::agent::{Agent, Message};
+use crate::math::Vec2;
 use site::Site;
 
 use rand::Rng;
@@ -13,7 +14,7 @@ pub struct World {
     pub agents: Vec<Agent>,
     pub sites: Vec<Site>,
     pub site_kinds: Vec<[u8; 3]>,
-    pub world_size: [f32; 2],
+    pub world_size: Vec2,
     msg_queue: std::collections::VecDeque<Message>,
 }
 
@@ -28,7 +29,7 @@ impl World {
             let x_coord = rng.gen_range(7.5..=8.5);
             let y_coord = rng.gen_range(4.5..=5.5);
             Agent {
-                pos: [x_coord, y_coord],
+                pos: (x_coord, y_coord).into(),
                 dir: rng.gen_range(0.0..2.0 * std::f32::consts::PI),
                 state: empty_state.clone(),
                 speed: rng.gen_range(0.3..=1.3),
@@ -42,7 +43,7 @@ impl World {
             agents: agents.collect(),
             sites: Vec::new(),
             site_kinds: Vec::new(),
-            world_size: [16.0, 10.0],
+            world_size: (16.0, 10.0).into(),
             msg_queue: Default::default(),
         }
     }

@@ -1,8 +1,10 @@
+use crate::math::Vec2;
+
 use rand::Rng;
 use std::f32::consts::PI;
 
 pub struct Agent {
-    pub pos: [f32; 2],
+    pub pos: Vec2,
     /// radians right-handedly counterclockwise from +x
     pub dir: f32,
     pub state: State,
@@ -27,13 +29,12 @@ pub struct Message {
     pub site_kind: usize,
     pub sq_dist: f32,
     pub range: f32,
-    pub source: [f32; 2],
+    pub source: Vec2,
 }
 
 impl Agent {
     pub fn step(&mut self, delta: f32) {
-        self.pos[0] += self.speed * delta * self.dir.cos();
-        self.pos[1] += self.speed * delta * self.dir.sin();
+        self.pos += self.speed * delta * Vec2::new(self.dir.cos(), self.dir.sin());
 
         self.state
             .sites
@@ -61,8 +62,9 @@ impl Agent {
                 .unwrap_or(true)
             {
                 self.state.target = Some((msg.site_kind, state.0));
-                let diff = [0, 1].map(|i| msg.source[i] - self.pos[i]);
-                self.dir = diff[1].atan2(diff[0]);
+                // let diff = [0, 1].map(|i| msg.source[i] - self.pos[i]);
+                let diff = msg.source - self.pos;
+                self.dir = diff.y.atan2(diff.x);
             }
 
             if msg.sq_dist == 0.0 {
@@ -85,7 +87,7 @@ impl Agent {
         })
     }
 
-    pub fn contain(&mut self, world_size: [f32; 2]) {
+    pub fn contain(&mut self, world_size: Vec2) {
         use std::f32::consts::FRAC_PI_2;
         [0, 1].map(|i| {
             // <0: outside negative

@@ -1,7 +1,7 @@
-use crate::agent::Message;
+use crate::{agent::Message, math::Vec2};
 
 pub struct Site {
-    pub pos: [f32; 2],
+    pub pos: Vec2,
     pub kind: usize,
     pub size: f32,
 }
