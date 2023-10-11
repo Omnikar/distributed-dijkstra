@@ -1,19 +1,20 @@
+pub mod obstacle;
+pub mod render;
 pub mod site;
 
 use crate::agent::{Agent, Message};
 use crate::math::Vec2;
+use obstacle::Obstacle;
+use render::Renderable;
 use site::Site;
 
 use rand::Rng;
-
-pub trait Renderable {
-    fn render(&self, world: &World, frame: &mut [u8], px_per_unit: f32, px_width: usize);
-}
 
 pub struct World {
     pub agents: Vec<Agent>,
     pub sites: Vec<Site>,
     pub site_kinds: Vec<[u8; 3]>,
+    pub obstacles: Vec<Box<dyn Obstacle>>,
     pub world_size: Vec2,
     msg_queue: std::collections::VecDeque<Message>,
 }
@@ -43,24 +44,36 @@ impl World {
             agents: agents.collect(),
             sites: Vec::new(),
             site_kinds: Vec::new(),
+            obstacles: Vec::new(),
             world_size: (16.0, 10.0).into(),
             msg_queue: Default::default(),
         }
     }
 
     pub fn render(&self, frame: &mut [u8], px_per_unit: f32, px_width: usize) {
+        let mut args = render::RenderArgs {
+            world: self,
+            frame,
+            px_per_unit,
+            px_width,
+        };
+
+        for obstacle in &self.obstacles {
+            obstacle.render(&mut args);
+        }
+
         for site in &self.sites {
-            site.render(self, frame, px_per_unit, px_width);
+            site.render(&mut args);
         }
 
         for agent in &self.agents {
-            agent.render(self, frame, px_per_unit, px_width);
+            agent.render(&mut args);
         }
     }
 
     pub fn update(&mut self, delta: f32) {
         self.agents.iter_mut().for_each(|agent| {
-            agent.step(delta);
+            agent.step(delta, self.obstacles.iter().map(Box::as_ref));
             agent.contain(self.world_size);
         });
         self.msg_queue

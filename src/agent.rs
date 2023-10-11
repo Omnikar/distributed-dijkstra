@@ -1,4 +1,4 @@
-use crate::math::Vec2;
+use crate::{math::Vec2, sim::obstacle::Obstacle};
 
 use rand::Rng;
 use std::f32::consts::PI;
@@ -33,8 +33,23 @@ pub struct Message {
 }
 
 impl Agent {
-    pub fn step(&mut self, delta: f32) {
-        self.pos += self.speed * delta * Vec2::new(self.dir.cos(), self.dir.sin());
+    pub fn step<'a>(
+        &mut self,
+        delta: f32,
+        obstacles: impl Iterator<Item = &'a dyn Obstacle> + Clone,
+    ) {
+        // self.pos += self.speed * delta * Vec2::new(self.dir.cos(), self.dir.sin());
+        let mut origin = self.pos;
+        let mut pos_delta = self.speed * delta * Vec2::new(self.dir.cos(), self.dir.sin());
+        while let Some(refl) = obstacles
+            .clone()
+            .find_map(|obs| obs.process_collision(origin, pos_delta))
+        {
+            origin = refl.0;
+            pos_delta = refl.1;
+        }
+        self.pos = origin + pos_delta;
+        self.dir = pos_delta.angle();
 
         self.state
             .sites
@@ -104,30 +119,19 @@ impl Agent {
     }
 }
 
-impl crate::sim::Renderable for Agent {
-    fn render(
-        &self,
-        world: &crate::sim::World,
-        frame: &mut [u8],
-        px_per_unit: f32,
-        px_width: usize,
-    ) {
-        let px_coord = self.pos.map(|coord| (coord * px_per_unit) as usize);
-
-        let idx = 4 * (px_coord[1] * px_width + px_coord[0]);
-        if idx >= frame.len() {
-            return;
-        }
+impl crate::sim::render::Renderable for Agent {
+    fn render(&self, args: crate::sim::render::Args) {
+        let px_coord = (self.pos * args.px_per_unit).map(|v| v as usize);
 
         let color = if self.is_scout {
             [0x4e; 3]
         } else {
             self.state
                 .target
-                .map(|site| world.site_kinds[site.0])
+                .map(|site| args.world.site_kinds[site.0])
                 .unwrap_or([0xff; 3])
         };
 
-        frame[idx..idx + 3].copy_from_slice(&color);
+        crate::sim::render::put_px(args, px_coord, color);
     }
 }

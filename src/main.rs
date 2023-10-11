@@ -84,9 +84,15 @@ fn main() {
     pixels.frame_mut().fill(0xff);
 
     let mut last_loop = std::time::Instant::now();
+    const FRAME_TIME_MIN: std::time::Duration = std::time::Duration::from_millis(16);
     event_loop.run(move |_event, _, control_flow| {
         let now = std::time::Instant::now();
-        let delta = (now - last_loop).as_secs_f32();
+        let mut delta = now - last_loop;
+        if delta < FRAME_TIME_MIN {
+            std::thread::sleep(FRAME_TIME_MIN - delta);
+            delta = FRAME_TIME_MIN;
+        }
+        let delta = delta.as_secs_f32();
         last_loop = now;
 
         let frame = pixels.frame_mut();

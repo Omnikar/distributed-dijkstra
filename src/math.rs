@@ -1,6 +1,6 @@
-use std::ops::{Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Vec2 {
     pub x: f32,
     pub y: f32,
@@ -13,6 +13,30 @@ impl Vec2 {
 
     pub fn map<T, F: FnMut(f32) -> T>(self, mut f: F) -> [T; 2] {
         [f(self.x), f(self.y)]
+    }
+
+    pub fn sq_mag(self) -> f32 {
+        self.x * self.x + self.y * self.y
+    }
+
+    pub fn mag(self) -> f32 {
+        self.sq_mag().sqrt()
+    }
+
+    pub fn norm(self) -> Self {
+        self / self.mag()
+    }
+
+    pub fn dot(self, rhs: Self) -> f32 {
+        self.x * rhs.x + self.y * rhs.y
+    }
+
+    pub fn cross(self, rhs: Self) -> f32 {
+        self.x * rhs.y - self.y * rhs.x
+    }
+
+    pub fn angle(self) -> f32 {
+        self.y.atan2(self.x)
     }
 }
 
@@ -68,6 +92,16 @@ impl Sub for Vec2 {
 impl SubAssign for Vec2 {
     fn sub_assign(&mut self, rhs: Self) {
         *self = *self - rhs;
+    }
+}
+
+impl Neg for Vec2 {
+    type Output = Self;
+    fn neg(self) -> Self::Output {
+        Self {
+            x: -self.x,
+            y: -self.y,
+        }
     }
 }
 
