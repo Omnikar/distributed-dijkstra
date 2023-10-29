@@ -53,10 +53,17 @@ impl Agent {
         self.pos = origin + pos_delta;
         self.dir = pos_delta.angle();
 
-        self.state
-            .sites
-            .iter_mut()
-            .for_each(|(sq_dist, _)| *sq_dist = (sq_dist.sqrt() + self.speed * delta).powi(2));
+        for (kind, sq_dist) in self.state.sites.iter_mut().map(|(d, _)| d).enumerate() {
+            *sq_dist = (sq_dist.sqrt() + self.speed * delta).powi(2);
+            if let Some(t_dist) = self
+                .state
+                .target
+                .as_mut()
+                .and_then(|(t_kind, t_dist)| (*t_kind == kind).then_some(t_dist))
+            {
+                *t_dist = *sq_dist;
+            }
+        }
 
         self.dir += rand::thread_rng().gen_range(-delta * self.turn..delta * self.turn);
         self.dir = self.dir.rem_euclid(2.0 * PI);
