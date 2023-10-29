@@ -17,6 +17,9 @@ pub trait Renderable {
 }
 
 pub fn put_px(args: Args, px_coord: [usize; 2], color: [u8; 3]) {
+    if px_coord[0] >= args.px_width {
+        return;
+    }
     let idx = 4 * (px_coord[1] * args.px_width + px_coord[0]);
     if idx >= args.frame.len() {
         return;

@@ -111,9 +111,12 @@ impl Agent {
             let pos_status = (self.pos[i] / world_size[i]).floor() as i32;
             // <0: facing outside negative
             // >0: facing outside positive
-            let dir_status = (self.dir - i as f32 * FRAC_PI_2 < FRAC_PI_2) as i32 * 2 - 1;
+            let dir_status = !(FRAC_PI_2..3.0 * FRAC_PI_2)
+                .contains(&(self.dir - i as f32 * FRAC_PI_2)) as i32
+                * 2
+                - 1;
             if pos_status * dir_status > 0 {
-                self.dir = (1 - i) as f32 * PI - self.dir;
+                self.dir = ((1 - i) as f32 * PI - self.dir).rem_euclid(2.0 * PI);
             }
         });
     }
