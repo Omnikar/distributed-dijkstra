@@ -41,12 +41,14 @@ impl Agent {
         // self.pos += self.speed * delta * Vec2::new(self.dir.cos(), self.dir.sin());
         let mut origin = self.pos;
         let mut pos_delta = self.speed * delta * Vec2::new(self.dir.cos(), self.dir.sin());
-        while let Some(refl) = obstacles
-            .clone()
-            .find_map(|obs| obs.process_collision(origin, pos_delta))
-        {
-            origin = refl.0;
-            pos_delta = refl.1;
+        let mut collision_limit = 0..10;
+        while let Some((hit_pos, refl_delta)) = collision_limit.next().and_then(|_| {
+            obstacles
+                .clone()
+                .find_map(|obs| obs.process_collision(origin, pos_delta))
+        }) {
+            origin = hit_pos;
+            pos_delta = refl_delta;
         }
         self.pos = origin + pos_delta;
         self.dir = pos_delta.angle();
