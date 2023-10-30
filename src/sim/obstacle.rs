@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use std::ops::RangeInclusive;
 
 use super::render::Renderable;
@@ -49,6 +50,7 @@ impl Renderable for Box<dyn Obstacle> {
     }
 }
 
+#[derive(Deserialize)]
 pub struct Circle {
     pub center: Vec2,
     pub radius: f32,
@@ -89,8 +91,17 @@ impl Obstacle for Circle {
     }
 }
 
+// Vertices must be supplied in right-handedly counterclockwise order.
+#[derive(Deserialize)]
+#[serde(from = "[Vec2; 3]")]
 pub struct Triangle {
     pub verts: [Vec2; 3],
+}
+
+impl From<[Vec2; 3]> for Triangle {
+    fn from(verts: [Vec2; 3]) -> Self {
+        Self { verts }
+    }
 }
 
 impl Obstacle for Triangle {
@@ -124,7 +135,6 @@ impl Obstacle for Triangle {
             Some(-(coefs.dot(origin) + p1.cross(p2)) / coefs.dot(ray))
                 .filter(|&t| {
                     let end = origin + t * ray;
-                    // [0, 1].map(|i| (p1[i]..=p2[i]).contains(&end[i])) == [true; 2]
                     (p1 - end).dot(p2 - end).is_sign_negative()
                 })
                 .map(|t| (t, -coefs.norm()))
@@ -140,8 +150,17 @@ impl Obstacle for Triangle {
     }
 }
 
+// Corners must be supplied as (x min, y min), (x max, y max)
+#[derive(Deserialize)]
+#[serde(from = "[Vec2; 2]")]
 pub struct Rect {
     pub corners: [Vec2; 2],
+}
+
+impl From<[Vec2; 2]> for Rect {
+    fn from(corners: [Vec2; 2]) -> Self {
+        Self { corners }
+    }
 }
 
 impl Obstacle for Rect {
@@ -171,4 +190,30 @@ impl Obstacle for Rect {
             })
             .collect()
     }
+}
+
+pub fn deser_obstacles<'de, D>(d: D) -> Result<Vec<Box<dyn Obstacle>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    macro_rules! gen_obs_deser {
+            ($($obs:ident),*) => {
+                #[derive(Deserialize)]
+                #[serde(untagged)]
+                enum ObsObj { $($obs($obs)),* }
+
+                let obj_vec: Vec<ObsObj> = Deserialize::deserialize(d)?;
+
+                return Ok(obj_vec
+                    .into_iter()
+                    .map(|o| match o {
+                        $(
+                            ObsObj::$obs(v) => Box::new(v) as Box<dyn Obstacle>,
+                        )*
+                    })
+                    .collect());
+            };
+        }
+
+    gen_obs_deser!(Circle, Triangle, Rect);
 }

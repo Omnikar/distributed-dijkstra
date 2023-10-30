@@ -11,4 +11,6 @@ opt-level = 3
 [dependencies]
 pixels = "0.13.0"
 rand = "0.8.5"
+ron = "0.8.1"
+serde = { version = "1.0.189", features = ["derive"] }
 winit = "0.28.6"

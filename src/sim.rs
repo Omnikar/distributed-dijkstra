@@ -10,12 +10,16 @@ use site::Site;
 
 use rand::Rng;
 
+#[derive(serde::Deserialize)]
 pub struct World {
+    #[serde(skip)]
     pub agents: Vec<Agent>,
     pub sites: Vec<Site>,
     pub site_kinds: Vec<[u8; 3]>,
+    #[serde(deserialize_with = "obstacle::deser_obstacles")]
     pub obstacles: Vec<Box<dyn Obstacle>>,
     pub world_size: Vec2,
+    #[serde(skip)]
     msg_queue: std::collections::VecDeque<Message>,
 }
 

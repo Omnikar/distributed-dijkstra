@@ -2,8 +2,6 @@ mod agent;
 mod math;
 mod sim;
 
-use sim::site::Site;
-
 use pixels::{PixelsBuilder, SurfaceTexture};
 use winit::{
     dpi::LogicalSize,
@@ -14,49 +12,18 @@ use winit::{
 const SCREEN_DIMS: (u32, u32) = (1440, 900);
 
 fn main() {
-    let mut world = sim::World::new();
+    let world_f = std::env::args().nth(1);
+    let world_f = world_f.as_deref().unwrap_or("scenes/default.ron");
+    let world_s = std::fs::read_to_string(world_f).unwrap();
+    let mut world: sim::World = ron::from_str(&world_s).unwrap();
+    world.agents = sim::World::new().agents;
 
-    world.sites.push(Site {
-        pos: (3.0, 3.0).into(),
-        kind: 0,
-        size: 0.2,
-    });
-    world.sites.push(Site {
-        pos: (7.0, 2.0).into(),
-        kind: 1,
-        size: 0.2,
-    });
-    world.sites.push(Site {
-        pos: (5.0, 5.0).into(),
-        kind: 2,
-        size: 0.2,
-    });
-    world.sites.push(Site {
-        pos: (5.0, 8.0).into(),
-        kind: 3,
-        size: 0.2,
-    });
-    world.sites.push(Site {
-        pos: (8.0, 7.0).into(),
-        kind: 4,
-        size: 0.2,
-    });
-    world.sites.push(Site {
-        pos: (8.5, 4.5).into(),
-        kind: 5,
-        size: 0.2,
-    });
-
-    world.site_kinds = vec![
-        [0xff, 0x00, 0x00],
-        [0x00, 0xff, 0x00],
-        [0x00, 0x00, 0xff],
-        [0xff, 0xff, 0x00],
-        [0x00, 0xff, 0xff],
-        [0xff, 0x00, 0xff],
-    ];
-
-    let n_sites = world.sites.iter().map(|site| site.kind + 1).max().unwrap();
+    let n_sites = world
+        .sites
+        .iter()
+        .map(|site| site.kind + 1)
+        .max()
+        .unwrap_or(0);
     world.agents.iter_mut().for_each(|agent| {
         agent.state.sites = vec![(f32::INFINITY, true); n_sites];
     });

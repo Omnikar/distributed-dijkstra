@@ -1,5 +1,6 @@
 use crate::{agent::Message, math::Vec2};
 
+#[derive(serde::Deserialize)]
 pub struct Site {
     pub pos: Vec2,
     pub kind: usize,
