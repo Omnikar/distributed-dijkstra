@@ -99,6 +99,15 @@ impl World {
                 continue;
             }
 
+            if self
+                .obstacles
+                .iter()
+                .flat_map(|obs| obs.intersects(msg.source, agent.pos - msg.source))
+                .any(|(t, _)| 0.0 < t && t <= 1.0)
+            {
+                continue;
+            }
+
             if let Some(new_msg) = agent.inform(msg) {
                 self.msg_queue.push_back(new_msg);
             }
