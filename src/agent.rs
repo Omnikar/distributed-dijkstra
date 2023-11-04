@@ -86,7 +86,6 @@ impl Agent {
                 .unwrap_or(true)
             {
                 self.state.target = Some((msg.site_kind, state.0));
-                // let diff = [0, 1].map(|i| msg.source[i] - self.pos[i]);
                 let diff = msg.source - self.pos;
                 self.dir = diff.y.atan2(diff.x);
             }
