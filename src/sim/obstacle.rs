@@ -1,11 +1,11 @@
 use serde::Deserialize;
-use std::ops::RangeInclusive;
+use std::ops::Range;
 
 use super::render::Renderable;
 use crate::math::Vec2;
 
 pub trait Obstacle {
-    fn bounding_box(&self) -> [RangeInclusive<f32>; 2];
+    fn bounding_box(&self) -> [Range<f32>; 2];
     /// Assuming a point is *inside the bounding box*, is it in the shape?
     fn inside(&self, coord: Vec2) -> bool;
     /// -> (ray multiplier, normal vector)
@@ -39,7 +39,7 @@ impl Renderable for Box<dyn Obstacle> {
         let px = |v| (v * px_per_unit) as usize;
         let unpx = |v| v as f32 / px_per_unit;
 
-        let [x_range, y_range] = self.bounding_box().map(|r| px(*r.start())..=px(*r.end()));
+        let [x_range, y_range] = self.bounding_box().map(|r| px(r.start)..=px(r.end));
         let bbox_iter = x_range.flat_map(|x| y_range.clone().map(move |y| [x, y]));
 
         for px_coord in bbox_iter {
@@ -57,12 +57,12 @@ pub struct Circle {
 }
 
 impl Obstacle for Circle {
-    fn bounding_box(&self) -> [RangeInclusive<f32>; 2] {
+    fn bounding_box(&self) -> [Range<f32>; 2] {
         let rad_vec = Vec2::new(self.radius, self.radius);
         let bot_left = self.center - rad_vec;
         let top_right = self.center + rad_vec;
         // [bot_left.x..=top_right.x, bot_left.y..=top_right.y]
-        [0, 1].map(|i| bot_left[i]..=top_right[i])
+        [0, 1].map(|i| bot_left[i]..top_right[i])
     }
 
     fn inside(&self, coord: Vec2) -> bool {
@@ -105,13 +105,13 @@ impl From<[Vec2; 3]> for Triangle {
 }
 
 impl Obstacle for Triangle {
-    fn bounding_box(&self) -> [RangeInclusive<f32>; 2] {
+    fn bounding_box(&self) -> [Range<f32>; 2] {
         let xs = self.verts.map(|vert| vert.x);
         let ys = self.verts.map(|vert| vert.y);
 
         [xs, ys].map(|vs| {
             vs.into_iter().min_by(f32::total_cmp).unwrap()
-                ..=vs.into_iter().max_by(f32::total_cmp).unwrap()
+                ..vs.into_iter().max_by(f32::total_cmp).unwrap()
         })
     }
 
@@ -152,20 +152,20 @@ impl Obstacle for Triangle {
 
 // Corners must be supplied as (x min, y min), (x max, y max)
 #[derive(Deserialize)]
-#[serde(from = "[Vec2; 2]")]
+#[serde(from = "[Range<f32>; 2]")]
 pub struct Rect {
-    pub corners: [Vec2; 2],
+    pub ranges: [Range<f32>; 2],
 }
 
-impl From<[Vec2; 2]> for Rect {
-    fn from(corners: [Vec2; 2]) -> Self {
-        Self { corners }
+impl From<[Range<f32>; 2]> for Rect {
+    fn from(ranges: [Range<f32>; 2]) -> Self {
+        Self { ranges }
     }
 }
 
 impl Obstacle for Rect {
-    fn bounding_box(&self) -> [RangeInclusive<f32>; 2] {
-        [0, 1].map(|i| self.corners[0][i]..=self.corners[1][i])
+    fn bounding_box(&self) -> [Range<f32>; 2] {
+        self.ranges.clone()
     }
 
     fn inside(&self, _coord: Vec2) -> bool {
@@ -175,17 +175,20 @@ impl Obstacle for Rect {
     fn intersects(&self, origin: Vec2, ray: Vec2) -> Vec<(f32, Vec2)> {
         [0, 1]
             .into_iter()
-            .flat_map(|i| {
+            .flat_map(|axis| {
                 [0, 1]
-                    .map(|j| {
-                        let mut norm = [j as f32 * 2.0 - 1.0, 0.0];
-                        norm.rotate_right(i);
-                        ((self.corners[j][i] - origin[i]) / ray[i], norm.into())
+                    .map(|extr| {
+                        let mut norm = [extr as f32 * 2.0 - 1.0, 0.0];
+                        norm.rotate_right(axis);
+                        let range = &self.ranges[axis];
+                        (
+                            ([range.start, range.end][extr] - origin[axis]) / ray[axis],
+                            norm.into(),
+                        )
                     })
                     .into_iter()
                     .filter(move |&(t, _)| {
-                        (self.corners[0][1 - i]..=self.corners[1][1 - i])
-                            .contains(&(origin + t * ray)[1 - i])
+                        self.ranges[1 - axis].contains(&(origin + t * ray)[1 - axis])
                     })
             })
             .collect()
