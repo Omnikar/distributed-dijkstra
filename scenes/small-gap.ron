@@ -1,0 +1,23 @@
+World(
+    world_size: (16, 10),
+    sites: [
+        Site(
+            pos: (2.5, 2),
+            kind: 0,
+            size: 0.2,
+        ),
+        Site(
+            pos: (13.5, 8),
+            kind: 1,
+            size: 0.2,
+        ),
+    ],
+    site_kinds: [
+        (0xff, 0x00, 0x00),
+        (0x00, 0xff, 0x00),
+    ],
+    obstacles: [
+        Rect((7.5, 8.5), (0, 4.8)),
+        Rect((7.5, 8.5), (5.2, 10)),
+    ],
+)

@@ -19,11 +19,17 @@ pub trait Obstacle {
             return None;
         }
 
+        // eprintln!("collision");
+
         let hits = self.intersects(origin, delta);
-        let (t, norm) = hits
+        let Some((t, norm)) = hits
             .into_iter()
             .filter(|&(t, _)| -1.0 < t && t <= 1.0)
-            .min_by(|(a, _), (b, _)| a.total_cmp(b))?;
+            .min_by(|(a, _), (b, _)| a.total_cmp(b))
+        else {
+            // eprintln!("oops");
+            return None;
+        };
 
         let hit_pos = origin + t * delta;
         let rest_delta = (1.0 - t) * delta;
@@ -39,7 +45,10 @@ impl Renderable for Box<dyn Obstacle> {
         let px = |v| (v * px_per_unit) as usize;
         let unpx = |v| v as f32 / px_per_unit;
 
-        let [x_range, y_range] = self.bounding_box().map(|r| px(r.start)..=px(r.end));
+        let bbox = self.bounding_box();
+        // let [x_range, y_range] = self.bounding_box().map(|r| px(r.start)..=px(r.end));
+        let [x_range, y_range] = [0, 1]
+            .map(|i| px(bbox[i].start.max(0.0))..=px(bbox[i].end.min(args.world.world_size[i])));
         let bbox_iter = x_range.flat_map(|x| y_range.clone().map(move |y| [x, y]));
 
         for px_coord in bbox_iter {
@@ -192,6 +201,24 @@ impl Obstacle for Rect {
                     })
             })
             .collect()
+    }
+}
+
+pub struct InvRect(pub Rect);
+impl Obstacle for InvRect {
+    fn bounding_box(&self) -> [Range<f32>; 2] {
+        [f32::MIN..f32::MAX, f32::MIN..f32::MAX]
+    }
+
+    fn inside(&self, coord: Vec2) -> bool {
+        let bbox = self.0.bounding_box();
+        [0, 1].map(|i| bbox[i].contains(&coord[i])) != [true, true]
+    }
+
+    fn intersects(&self, origin: Vec2, ray: Vec2) -> Vec<(f32, Vec2)> {
+        let mut ints = self.0.intersects(origin, ray);
+        ints.iter_mut().for_each(|(_, norm)| *norm *= -1.0);
+        ints
     }
 }
 

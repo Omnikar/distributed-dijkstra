@@ -12,7 +12,6 @@ pub struct RenderArgs<'a, 'b> {
 }
 
 pub trait Renderable {
-    // fn render(&self, world: &World, frame: &mut [u8], px_per_unit: f32, px_width: usize);
     fn render(&self, args: Args);
 }
 
@@ -28,6 +27,20 @@ pub fn put_px(args: Args, px_coord: [usize; 2], color: [u8; 3]) {
     args.frame[idx..idx + 3].copy_from_slice(&color);
 }
 
+pub fn add_px(args: Args, px_coord: [usize; 2], color: [u8; 3]) {
+    if px_coord[0] >= args.px_width {
+        return;
+    }
+    let idx = 4 * (px_coord[1] * args.px_width + px_coord[0]);
+    if idx >= args.frame.len() {
+        return;
+    }
+
+    args.frame[idx..idx + 3]
+        .iter_mut()
+        .zip(color)
+        .for_each(|(v, c)| *v = v.saturating_add(c));
+}
 pub fn draw_circle(args: Args, center: Vec2, radius: f32, color: [u8; 3]) {
     let px = |v| (v * args.px_per_unit) as usize;
 

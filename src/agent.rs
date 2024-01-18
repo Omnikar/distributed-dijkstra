@@ -13,6 +13,8 @@ pub struct Agent {
     pub turn: f32,
     /// communication distance
     pub comm: f32,
+    /// obstacle avoidance distance
+    pub obs_dist: f32,
     pub is_scout: bool,
 }
 
@@ -20,7 +22,7 @@ pub struct Agent {
 pub struct State {
     /// site kind indexed, (square distance, is targeting site)
     pub sites: Vec<(f32, bool)>,
-    /// currently targeted site (kind, distance)
+    /// currently targeted site (kind, square distance)
     pub target: Option<(usize, f32)>,
 }
 
@@ -38,9 +40,21 @@ impl Agent {
         delta: f32,
         obstacles: impl Iterator<Item = &'a dyn Obstacle> + Clone,
     ) {
+        // let speed = if !self.is_scout && self.state.target.is_none() {
+        //     self.speed * 0.2
+        // } else {
+        //     self.speed
+        // };
+        // let speed = self.speed;
+        let speed = if self.is_scout {
+            self.speed * 1.5
+        } else {
+            self.speed
+        };
+
         // self.pos += self.speed * delta * Vec2::new(self.dir.cos(), self.dir.sin());
         let mut origin = self.pos;
-        let mut pos_delta = self.speed * delta * Vec2::new(self.dir.cos(), self.dir.sin());
+        let mut pos_delta = speed * delta * Vec2::new(self.dir.cos(), self.dir.sin());
         let mut collision_limit = 0..10;
         while let Some((hit_pos, refl_delta)) = collision_limit.next().and_then(|_| {
             obstacles
@@ -54,7 +68,7 @@ impl Agent {
         self.dir = pos_delta.angle();
 
         for (kind, sq_dist) in self.state.sites.iter_mut().map(|(d, _)| d).enumerate() {
-            *sq_dist = (sq_dist.sqrt() + self.speed * delta).powi(2);
+            *sq_dist = (sq_dist.sqrt() + speed * delta).powi(2);
             if let Some(t_dist) = self
                 .state
                 .target
@@ -82,20 +96,30 @@ impl Agent {
             if self
                 .state
                 .target
-                .map(|site| msg.sq_dist <= site.1)
+                .map(|site| msg.sq_dist < site.1)
                 .unwrap_or(true)
             {
                 self.state.target = Some((msg.site_kind, state.0));
                 let diff = msg.source - self.pos;
                 self.dir = diff.y.atan2(diff.x);
             }
+            // 180 away from messages about non targeted sites
+            else {
+                let diff = self.pos - msg.source;
+                self.dir = diff.y.atan2(diff.x);
+            }
 
             if msg.sq_dist == 0.0 {
                 self.dir = rand::thread_rng().gen_range(0.0..2.0 * PI);
+                // self.dir = (self.dir + PI).rem_euclid(2.0 * PI);
                 state.1 = false;
 
                 if self.state.sites.iter().all(|site| !site.1) {
-                    self.state.sites.iter_mut().for_each(|site| site.1 = true);
+                    self.state
+                        .sites
+                        .iter_mut()
+                        .enumerate()
+                        .for_each(|(i, site)| site.1 = i != msg.site_kind);
                 }
 
                 self.state.target = None;
@@ -128,14 +152,50 @@ impl Agent {
             }
         });
     }
+
+    pub fn avoid_obstacles<'a>(&mut self, obstacles: impl Iterator<Item = &'a dyn Obstacle>) {
+        let ray = Vec2::new(self.dir.cos(), self.dir.sin());
+        let Some((t, norm)) = obstacles
+            .flat_map(|o| o.intersects(self.pos, ray))
+            .filter(|&(t, _)| t > 0.0 && t < self.obs_dist)
+            .min_by(|a, b| a.0.total_cmp(&b.0))
+        else {
+            return;
+        };
+        let t = t - 0.1;
+
+        use std::f32::consts::FRAC_PI_2;
+
+        let tan = Vec2::new(norm.y, -norm.x);
+        let tan_comp = ray.dot(tan).acos() - FRAC_PI_2;
+        let norm_comps = [-1.0, 1.0].map(|sign| (t * sign * ray.dot(norm) / self.obs_dist).acos());
+        let angles = norm_comps
+            .map(|norm_comp| tan_comp + norm_comp)
+            .map(|v| (v + FRAC_PI_2).rem_euclid(PI) - FRAC_PI_2);
+        let mut angle = angles[(angles[0].abs() > angles[1].abs()) as usize];
+        angle += 10f32.to_radians().copysign(angle);
+        self.dir += angle;
+    }
 }
 
 impl crate::sim::render::Renderable for Agent {
     fn render(&self, args: crate::sim::render::Args) {
         let px_coord = (self.pos * args.px_per_unit).map(|v| v as usize);
 
+        let trails = crate::var("TRAILS");
+
         let color = if self.is_scout {
-            [0x4e; 3]
+            // [0x4e; 3]
+            if trails {
+                [0x10; 3]
+            } else {
+                [0x4e; 3]
+            }
+        } else if trails {
+            self.state
+                .target
+                .map(|site| args.world.site_kinds[site.0].map(|v| (v as u16 * 0x30 / 0xff) as u8))
+                .unwrap_or([0x10; 3])
         } else {
             self.state
                 .target
@@ -143,6 +203,10 @@ impl crate::sim::render::Renderable for Agent {
                 .unwrap_or([0xff; 3])
         };
 
-        crate::sim::render::put_px(args, px_coord, color);
+        if trails {
+            crate::sim::render::add_px(args, px_coord, color);
+        } else {
+            crate::sim::render::put_px(args, px_coord, color);
+        }
     }
 }

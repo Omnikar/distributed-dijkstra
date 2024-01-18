@@ -1,0 +1,193 @@
+World(
+    world_size: (16, 10),
+    sites: [
+        Site(
+            pos: (2.5, 2),
+            kind: 0,
+            size: 0.2,
+        ),
+        Site(
+            pos: (13.5, 8),
+            kind: 1,
+            size: 0.2,
+        ),
+    ],
+    site_kinds: [
+        (0xff, 0x00, 0x00),
+        (0x00, 0xff, 0x00),
+    ],
+    obstacles: [
+        Circle(
+            center: (3.5, 3.5),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (5, 3),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (5.7, 4.2),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (6.8, 5.4),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (8.4, 4.8),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (9.8, 4.5),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (5.4, 5.8),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (3.8, 5),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (6.5, 6.7),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (7.9, 6.2),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (9.3, 5.8),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (9.1, 7.2),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (8, 7.3),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (2.4, 4.4),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (4.1, 6.1),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (5.1, 7.2),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (3.8, 2.2),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (12.5, 8.3),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (11.9, 7.3),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (11, 8.3),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (9.3, 8.4),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (10.3, 7.1),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (11, 5.9),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (7, 4.2),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (13.2, 7.1),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (12.4, 5.8),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (14.3, 7.5),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (8.7, 3.4),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (7.6, 3.1),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (11.4, 4.8),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (3.8, 1.1),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (5, 0.5),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (5.9, 1.6),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (10.3, 3.3),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (8.4, 2.1),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (11.5, 6.6),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (6.4, 2.9),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (9.3, 9.5),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (14.1, 6.1),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (7, 0.9),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (7.1, 2),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (4.5, 4.2),
+            radius: 0.5,
+        ),
+        Circle(
+            center: (11.4, 3.6),
+            radius: 0.5,
+        ),
+    ],
+)

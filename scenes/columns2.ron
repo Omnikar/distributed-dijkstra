@@ -1,0 +1,48 @@
+World(
+    world_size: (16, 10),
+    sites: [
+        Site(
+            pos: (2.5, 2),
+            kind: 0,
+            size: 0.2,
+        ),
+        Site(
+            pos: (13.5, 8),
+            kind: 1,
+            size: 0.2,
+        ),
+    ],
+    site_kinds: [
+        (0xff, 0x00, 0x00),
+        (0x00, 0xff, 0x00),
+    ],
+    obstacles: [
+        // Vertical Columns
+        Rect((5, 6), (-1, 5.5)),
+        Triangle((5, 5.5), (6, 5.5), (5.5, 5.625)),
+        Triangle((6, 6), (5, 6), (5.5, 5.875)),
+        Rect((5, 6), (6, 7)),
+        Circle(
+            center: (5.5, 7),
+            radius: 0.5,
+        ),
+        Rect((10, 11), (3, 11)),
+        Circle(
+            center: (10.5, 3),
+            radius: 0.5,
+        ),
+        Triangle((10.5, 2.5), (11.5, 2), (11, 3)),
+
+        // Horizontal Bars
+        Rect((5.5, 8), (6.5, 7.5)),
+        Circle(
+            center: (8, 7),
+            radius: 0.5,
+        ),
+        Rect((8, 10.5), (2.5, 3.5)),
+        Circle(
+            center: (8, 3),
+            radius: 0.5,
+        ),
+    ],
+)

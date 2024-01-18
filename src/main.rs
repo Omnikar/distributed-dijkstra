@@ -3,29 +3,54 @@ mod math;
 mod sim;
 
 use pixels::{PixelsBuilder, SurfaceTexture};
+use rand::Rng;
 use winit::{
     dpi::LogicalSize,
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
 };
 
+use crate::sim::render::Renderable;
+
 const SCREEN_DIMS: (u32, u32) = (1440, 900);
 
 fn main() {
+    let mut rng = rand::thread_rng();
+
     let world_f = std::env::args().nth(1);
     let world_f = world_f.as_deref().unwrap_or("scenes/default.ron");
     let world_s = std::fs::read_to_string(world_f).unwrap();
     let mut world: sim::World = ron::from_str(&world_s).unwrap();
+    world
+        .obstacles
+        .push(Box::new(sim::obstacle::InvRect(sim::obstacle::Rect {
+            ranges: [0.0..world.world_size.x, 0.0..world.world_size.y],
+        })));
     world.agents = sim::World::new().agents;
+    for agent in &mut world.agents {
+        if world
+            .obstacles
+            .iter()
+            .map(|obs| (obs.bounding_box(), obs))
+            .any(|(bbox, obs)| {
+                [0, 1].map(|i| bbox[i].contains(&agent.pos[i])) == [true; 2]
+                    && obs.inside(agent.pos)
+            })
+        {
+            agent.pos = world.world_size / 2.0;
+        }
+    }
 
-    let n_sites = world
-        .sites
-        .iter()
-        .map(|site| site.kind + 1)
-        .max()
-        .unwrap_or(0);
+    let n_sites =
+        world
+            .sites
+            .iter()
+            .map(|site| site.kind + 1)
+            .max()
+            .unwrap_or(0);
     world.agents.iter_mut().for_each(|agent| {
         agent.state.sites = vec![(f32::INFINITY, true); n_sites];
+        agent.state.sites[rng.gen_range(0..=1)].1 = false;
     });
 
     let event_loop = EventLoop::new();
@@ -50,6 +75,10 @@ fn main() {
     };
     pixels.frame_mut().fill(0xff);
 
+    let trails = var("TRAILS");
+
+    let mut trail_buf = Box::new([0u8; (SCREEN_DIMS.0 * SCREEN_DIMS.1 * 4) as usize]);
+
     let mut last_loop = std::time::Instant::now();
     const FRAME_TIME_MIN: std::time::Duration = std::time::Duration::from_millis(16);
     event_loop.run(move |_event, _, control_flow| {
@@ -70,10 +99,52 @@ fn main() {
 
         world.update(delta);
         world.render(frame, 90.0, 1440);
+
+        // world.agents[0].render(&mut sim::render::RenderArgs {
+        //     world: &world,
+        //     frame: &mut *trail_buf,
+        //     px_per_unit: 90.0,
+        //     px_width: 1440,
+        // });
+
+        if trails {
+            for agent in &world.agents {
+                if agent.is_scout {
+                    continue;
+                }
+                agent.render(&mut sim::render::RenderArgs {
+                    world: &world,
+                    frame: &mut *trail_buf,
+                    px_per_unit: 90.0,
+                    px_width: 1440,
+                });
+            }
+            frame
+                .iter_mut()
+                .zip(*trail_buf)
+                .for_each(|(v, tr)| *v = tr.max(*v));
+        }
+
         pixels.render().unwrap();
+
+        if trails {
+            trail_buf
+                .iter_mut()
+                .for_each(|v| *v = v.saturating_sub(rng.gen_bool(0.5) as u8));
+        }
 
         if let ControlFlow::ExitWithCode(code) = control_flow {
             std::process::exit(*code);
         }
     });
+}
+
+fn var<T: std::str::FromStr + Default>(name: &'static str) -> T {
+    // T::from_str(&std::env::var(name).unwrap())
+    //     .ok()
+    //     .unwrap_or_default()
+    std::env::var(name)
+        .ok()
+        .and_then(|v| T::from_str(&v).ok())
+        .unwrap_or_default()
 }

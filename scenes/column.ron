@@ -1,0 +1,26 @@
+World(
+    world_size: (16, 10),
+    sites: [
+        Site(
+            pos: (4, 2),
+            kind: 0,
+            size: 0.2,
+        ),
+        Site(
+            pos: (12, 2),
+            kind: 1,
+            size: 0.2,
+        ),
+    ],
+    site_kinds: [
+        (0xff, 0x00, 0x00),
+        (0x00, 0xff, 0x00),
+    ],
+    obstacles: [
+        Rect((7.5, 8.5), (0, 4)),
+        Circle(
+            center: (8, 4),
+            radius: 0.5,
+        ),
+    ],
+)
