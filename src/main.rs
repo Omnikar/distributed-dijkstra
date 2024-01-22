@@ -77,7 +77,7 @@ fn main() {
 
     let trails = var("TRAILS");
 
-    let mut trail_buf = Box::new([0u8; (SCREEN_DIMS.0 * SCREEN_DIMS.1 * 4) as usize]);
+    let mut trail_buf = vec![0u8; (SCREEN_DIMS.0 * SCREEN_DIMS.1 * 4) as usize].into_boxed_slice();
 
     let mut last_loop = std::time::Instant::now();
     const FRAME_TIME_MIN: std::time::Duration = std::time::Duration::from_millis(16);
@@ -114,15 +114,15 @@ fn main() {
                 }
                 agent.render(&mut sim::render::RenderArgs {
                     world: &world,
-                    frame: &mut *trail_buf,
+                    frame: &mut trail_buf,
                     px_per_unit: 90.0,
                     px_width: 1440,
                 });
             }
             frame
                 .iter_mut()
-                .zip(*trail_buf)
-                .for_each(|(v, tr)| *v = tr.max(*v));
+                .zip(trail_buf.iter())
+                .for_each(|(v, &tr)| *v = tr.max(*v));
         }
 
         pixels.render().unwrap();
