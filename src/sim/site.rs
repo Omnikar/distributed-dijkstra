@@ -16,6 +16,15 @@ impl Site {
             source: self.pos,
         }
     }
+
+    pub fn visibility_msg(&self) -> Message {
+        Message {
+            site_kind: self.kind,
+            sq_dist: 0.8,
+            range: 0.8,
+            source: self.pos,
+        }
+    }
 }
 
 impl super::render::Renderable for Site {

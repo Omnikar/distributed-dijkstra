@@ -16,6 +16,8 @@ pub struct Agent {
     /// obstacle avoidance distance
     pub obs_dist: f32,
     pub is_scout: bool,
+    pub shortest_dist: f32,
+    pub current_dist: f32,
 }
 
 #[derive(Clone)]
@@ -54,7 +56,9 @@ impl Agent {
 
         // self.pos += self.speed * delta * Vec2::new(self.dir.cos(), self.dir.sin());
         let mut origin = self.pos;
-        let mut pos_delta = speed * delta * Vec2::new(self.dir.cos(), self.dir.sin());
+        let dist = speed * delta;
+        self.current_dist += dist;
+        let mut pos_delta = dist * Vec2::new(self.dir.cos(), self.dir.sin());
         let mut collision_limit = 0..10;
         while let Some((hit_pos, refl_delta)) = collision_limit.next().and_then(|_| {
             obstacles
@@ -84,11 +88,18 @@ impl Agent {
     }
 
     pub fn inform(&mut self, msg: Message) -> Option<Message> {
+        // msg.sq_dist = msg.sq (msg.source - self.pos).mag();
+        // msg.sq_dist = (msg.sq_dist.sqrt() - msg.range + (msg.source - self.pos).mag())
+        //     .powi(2)
+        //     .min(msg.sq_dist);
         let state = self
             .state
             .sites
             .get_mut(msg.site_kind)
             .filter(|st| msg.sq_dist < st.0)?;
+        // else {
+        //     return Vec::new();
+        // }
 
         state.0 = msg.sq_dist;
 
@@ -104,14 +115,14 @@ impl Agent {
                 self.dir = diff.y.atan2(diff.x);
             }
             // 180 away from messages about non targeted sites
-            else {
-                let diff = self.pos - msg.source;
-                self.dir = diff.y.atan2(diff.x);
-            }
+            // else {
+            //     let diff = self.pos - msg.source;
+            //     self.dir = diff.y.atan2(diff.x);
+            // }
 
             if msg.sq_dist == 0.0 {
-                self.dir = rand::thread_rng().gen_range(0.0..2.0 * PI);
-                // self.dir = (self.dir + PI).rem_euclid(2.0 * PI);
+                // self.dir = rand::thread_rng().gen_range(0.0..2.0 * PI);
+                self.dir = (self.dir + PI).rem_euclid(2.0 * PI);
                 state.1 = false;
 
                 if self.state.sites.iter().all(|site| !site.1) {
@@ -120,6 +131,18 @@ impl Agent {
                         .iter_mut()
                         .enumerate()
                         .for_each(|(i, site)| site.1 = i != msg.site_kind);
+                }
+
+                if self.current_dist.is_nan() {
+                    self.current_dist = 0.0;
+                } else if self
+                    .state
+                    .target
+                    .map(|v| v.0 == msg.site_kind)
+                    .unwrap_or(false)
+                {
+                    self.shortest_dist = self.shortest_dist.min(self.current_dist);
+                    self.current_dist = 0.0;
                 }
 
                 self.state.target = None;
@@ -132,6 +155,26 @@ impl Agent {
             source: self.pos,
             ..msg
         })
+        // vec![
+        //     // Message {
+        //     //     sq_dist: (msg.sq_dist.sqrt() + self.comm).powi(2),
+        //     //     range: self.comm,
+        //     //     source: self.pos,
+        //     //     ..msg
+        //     // },
+        //     // Message {
+        //     //     sq_dist: (msg.sq_dist.sqrt() + 3.0 * self.comm).powi(2),
+        //     //     range: self.comm,
+        //     //     source: self.pos,
+        //     //     ..msg
+        //     // },
+        //     Message {
+        //         sq_dist: (msg.sq_dist.sqrt() + 9.0 * self.comm).powi(2),
+        //         range: self.comm,
+        //         source: self.pos,
+        //         ..msg
+        //     },
+        // ]
     }
 
     pub fn contain(&mut self, world_size: Vec2) {

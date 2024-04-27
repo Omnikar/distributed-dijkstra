@@ -30,35 +30,36 @@ impl World {
             sites: Default::default(),
             target: None,
         };
-        let agents =
-            (0..2000).map(|_| {
-                // Bottom Middle
-                // let x_coord = rng.gen_range(7.5..=8.5);
-                // let y_coord = rng.gen_range(8.5..=9.5);
-                // Everywhere
-                // let x_coord = rng.gen_range(0.0..=16.0);
-                // let y_coord = rng.gen_range(0.0..=10.0);
-                // Top Right
-                let x_coord = rng.gen_range(15.0..=16.0);
-                let y_coord = rng.gen_range(0.0..=1.0);
-                Agent {
-                    pos: (x_coord, y_coord).into(),
-                    dir: rng.gen_range(0.0..2.0 * std::f32::consts::PI),
-                    state: empty_state.clone(),
-                    // state: {
-                    //     let mut state = empty_state.clone();
-                    //     state.sites[rng.gen_range(0..=1)].1 = true;
-                    //     state
-                    // },
-                    speed: rng.gen_range(0.1..=1.5),
-                    // speed: rng.gen_range(3.5..=4.5),
-                    turn: 100.0f32.to_radians(),
-                    comm: 0.8,
-                    // comm: 2.0,
-                    obs_dist: 0.4,
-                    is_scout: rng.gen_bool(0.5),
-                }
-            });
+        let agents = (0..2000).map(|_| {
+            // Bottom Middle
+            // let x_coord = rng.gen_range(7.5..=8.5);
+            // let y_coord = rng.gen_range(8.5..=9.5);
+            // Everywhere
+            // let x_coord = rng.gen_range(0.0..=16.0);
+            // let y_coord = rng.gen_range(0.0..=10.0);
+            // Top Right
+            let x_coord = rng.gen_range(15.0..=16.0);
+            let y_coord = rng.gen_range(0.0..=1.0);
+            Agent {
+                pos: (x_coord, y_coord).into(),
+                dir: rng.gen_range(0.0..2.0 * std::f32::consts::PI),
+                state: empty_state.clone(),
+                // state: {
+                //     let mut state = empty_state.clone();
+                //     state.sites[rng.gen_range(0..=1)].1 = true;
+                //     state
+                // },
+                speed: rng.gen_range(0.1..=1.5),
+                // speed: rng.gen_range(3.5..=4.5),
+                turn: 100.0f32.to_radians(),
+                comm: 0.8,
+                // comm: 2.0,
+                obs_dist: 0.4,
+                is_scout: rng.gen_bool(0.5),
+                shortest_dist: f32::MAX,
+                current_dist: f32::NAN,
+            }
+        });
 
         Self {
             agents: agents.collect(),
@@ -102,6 +103,8 @@ impl World {
         });
         self.msg_queue
             .extend(self.sites.iter().map(Site::collision_msg));
+        // self.msg_queue
+        //     .extend(self.sites.iter().map(Site::visibility_msg));
         while let Some(msg) = self.msg_queue.pop_front() {
             self.process_message(msg);
         }
@@ -131,6 +134,9 @@ impl World {
             if let Some(new_msg) = agent.inform(msg) {
                 self.msg_queue.push_back(new_msg);
             }
+            // for new_msg in agent.inform(msg) {
+            //     self.msg_queue.push_back(new_msg);
+            // }
         }
     }
 }

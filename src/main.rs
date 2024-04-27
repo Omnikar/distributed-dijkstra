@@ -4,6 +4,7 @@ mod sim;
 
 use pixels::{PixelsBuilder, SurfaceTexture};
 use rand::Rng;
+use std::time::Instant;
 use winit::{
     dpi::LogicalSize,
     event_loop::{ControlFlow, EventLoop},
@@ -75,14 +76,17 @@ fn main() {
     };
     pixels.frame_mut().fill(0xff);
 
+    let mut shortest_dist = f32::MAX;
+
     let trails = var("TRAILS");
 
     let mut trail_buf = vec![0u8; (SCREEN_DIMS.0 * SCREEN_DIMS.1 * 4) as usize].into_boxed_slice();
 
-    let mut last_loop = std::time::Instant::now();
+    let start = Instant::now();
+    let mut last_loop = Instant::now();
     const FRAME_TIME_MIN: std::time::Duration = std::time::Duration::from_millis(16);
     event_loop.run(move |_event, _, control_flow| {
-        let now = std::time::Instant::now();
+        let now = Instant::now();
         let mut delta = now - last_loop;
         if delta < FRAME_TIME_MIN {
             std::thread::sleep(FRAME_TIME_MIN - delta);
@@ -131,6 +135,17 @@ fn main() {
             trail_buf
                 .iter_mut()
                 .for_each(|v| *v = v.saturating_sub(rng.gen_bool(0.5) as u8));
+        }
+
+        let new_shortest_dist = world
+            .agents
+            .iter()
+            .map(|a| a.shortest_dist)
+            .min_by(|a, b| a.total_cmp(b))
+            .unwrap();
+        if new_shortest_dist < shortest_dist {
+            shortest_dist = new_shortest_dist;
+            println!("{}\t{shortest_dist}", start.elapsed().as_secs_f32());
         }
 
         if let ControlFlow::ExitWithCode(code) = control_flow {
